@@ -13,7 +13,7 @@ type Animal struct {
 }
 
 func TestMapCreation(t *testing.T) {
-	m := New()
+	m := New[string]()
 	if m == nil {
 		t.Error("map is null.")
 	}
@@ -24,7 +24,7 @@ func TestMapCreation(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 	elephant := Animal{"elephant"}
 	monkey := Animal{"monkey"}
 
@@ -37,7 +37,7 @@ func TestInsert(t *testing.T) {
 }
 
 func TestInsertAbsent(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 	elephant := Animal{"elephant"}
 	monkey := Animal{"monkey"}
 
@@ -48,7 +48,7 @@ func TestInsertAbsent(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 
 	// Get a missing element.
 	val, ok := m.Get("Money")
@@ -57,7 +57,7 @@ func TestGet(t *testing.T) {
 		t.Error("ok should be false when item is missing from map.")
 	}
 
-	if val != nil {
+	if (val != Animal{}) {
 		t.Error("Missing values should return as null.")
 	}
 
@@ -65,14 +65,9 @@ func TestGet(t *testing.T) {
 	m.Set("elephant", elephant)
 
 	// Retrieve inserted element.
-	tmp, ok := m.Get("elephant")
+	elephant, ok = m.Get("elephant")
 	if ok == false {
 		t.Error("ok should be true for item stored within the map.")
-	}
-
-	elephant, ok = tmp.(Animal) // Type assertion.
-	if !ok {
-		t.Error("expecting an element, not null.")
 	}
 
 	if elephant.name != "elephant" {
@@ -81,7 +76,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestHas(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 
 	// Get a missing element.
 	if m.Has("Money") == true {
@@ -97,7 +92,7 @@ func TestHas(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 
 	monkey := Animal{"monkey"}
 	m.Set("monkey", monkey)
@@ -114,7 +109,7 @@ func TestRemove(t *testing.T) {
 		t.Error("Expecting ok to be false for missing items.")
 	}
 
-	if temp != nil {
+	if (temp != Animal{}) {
 		t.Error("Expecting item to be nil after its removal.")
 	}
 
@@ -123,7 +118,7 @@ func TestRemove(t *testing.T) {
 }
 
 func TestRemoveCb(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 
 	monkey := Animal{"monkey"}
 	m.Set("monkey", monkey)
@@ -132,18 +127,15 @@ func TestRemoveCb(t *testing.T) {
 
 	var (
 		mapKey   string
-		mapVal   interface{}
+		mapVal   Animal
 		wasFound bool
 	)
-	cb := func(key string, val interface{}, exists bool) bool {
+	cb := func(key string, val Animal, exists bool) bool {
 		mapKey = key
 		mapVal = val
 		wasFound = exists
 
-		if animal, ok := val.(Animal); ok {
-			return animal.name == "monkey"
-		}
-		return false
+		return val.name == "monkey"
 	}
 
 	// Monkey should be removed
@@ -200,7 +192,7 @@ func TestRemoveCb(t *testing.T) {
 		t.Error("Wrong key was provided to the callback")
 	}
 
-	if mapVal != nil {
+	if (mapVal != Animal{}) {
 		t.Errorf("Wrong value was provided to the value")
 	}
 
@@ -214,27 +206,20 @@ func TestRemoveCb(t *testing.T) {
 }
 
 func TestPop(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 
 	monkey := Animal{"monkey"}
 	m.Set("monkey", monkey)
 
 	v, exists := m.Pop("monkey")
 
-	if !exists {
+	if !exists || v != monkey {
 		t.Error("Pop didn't find a monkey.")
 	}
 
-	m1, ok := v.(Animal)
-
-	if !ok || m1 != monkey {
-		t.Error("Pop found something else, but monkey.")
-	}
-
 	v2, exists2 := m.Pop("monkey")
-	m1, ok = v2.(Animal)
 
-	if exists2 || ok || m1 == monkey {
+	if exists2 || v2 == monkey {
 		t.Error("Pop keeps finding monkey")
 	}
 
@@ -248,13 +233,13 @@ func TestPop(t *testing.T) {
 		t.Error("Expecting ok to be false for missing items.")
 	}
 
-	if temp != nil {
+	if (temp != Animal{}) {
 		t.Error("Expecting item to be nil after its removal.")
 	}
 }
 
 func TestCount(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 	for i := 0; i < 100; i++ {
 		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
 	}
@@ -265,7 +250,7 @@ func TestCount(t *testing.T) {
 }
 
 func TestIsEmpty(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 
 	if m.IsEmpty() == false {
 		t.Error("new map should be empty")
@@ -279,7 +264,7 @@ func TestIsEmpty(t *testing.T) {
 }
 
 func TestIterator(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 
 	// Insert 100 elements.
 	for i := 0; i < 100; i++ {
@@ -291,7 +276,7 @@ func TestIterator(t *testing.T) {
 	for item := range m.Iter() {
 		val := item.Val
 
-		if val == nil {
+		if (val == Animal{}) {
 			t.Error("Expecting an object.")
 		}
 		counter++
@@ -303,7 +288,7 @@ func TestIterator(t *testing.T) {
 }
 
 func TestBufferedIterator(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 
 	// Insert 100 elements.
 	for i := 0; i < 100; i++ {
@@ -315,7 +300,7 @@ func TestBufferedIterator(t *testing.T) {
 	for item := range m.IterBuffered() {
 		val := item.Val
 
-		if val == nil {
+		if (val == Animal{}) {
 			t.Error("Expecting an object.")
 		}
 		counter++
@@ -326,8 +311,23 @@ func TestBufferedIterator(t *testing.T) {
 	}
 }
 
+func TestClear(t *testing.T) {
+	m := New[Animal]()
+
+	// Insert 100 elements.
+	for i := 0; i < 100; i++ {
+		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+	}
+
+	m.Clear()
+
+	if m.Count() != 0 {
+		t.Error("We should have 0 elements.")
+	}
+}
+
 func TestIterCb(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 
 	// Insert 100 elements.
 	for i := 0; i < 100; i++ {
@@ -336,12 +336,7 @@ func TestIterCb(t *testing.T) {
 
 	counter := 0
 	// Iterate over elements.
-	m.IterCb(func(key string, v interface{}) {
-		_, ok := v.(Animal)
-		if !ok {
-			t.Error("Expecting an animal object")
-		}
-
+	m.IterCb(func(key string, v Animal) {
 		counter++
 	})
 	if counter != 100 {
@@ -350,7 +345,7 @@ func TestIterCb(t *testing.T) {
 }
 
 func TestItems(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 
 	// Insert 100 elements.
 	for i := 0; i < 100; i++ {
@@ -365,7 +360,7 @@ func TestItems(t *testing.T) {
 }
 
 func TestConcurrent(t *testing.T) {
-	m := New()
+	m := New[int]()
 	ch := make(chan int)
 	const iterations = 1000
 	var a [iterations]int
@@ -380,7 +375,7 @@ func TestConcurrent(t *testing.T) {
 			val, _ := m.Get(strconv.Itoa(i))
 
 			// Write to channel inserted value.
-			ch <- val.(int)
+			ch <- val
 		} // Call go routine with current index.
 	}()
 
@@ -393,7 +388,7 @@ func TestConcurrent(t *testing.T) {
 			val, _ := m.Get(strconv.Itoa(i))
 
 			// Write to channel inserted value.
-			ch <- val.(int)
+			ch <- val
 		} // Call go routine with current index.
 	}()
 
@@ -429,7 +424,7 @@ func TestJsonMarshal(t *testing.T) {
 		SHARD_COUNT = 32
 	}()
 	expected := "{\"a\":1,\"b\":2}"
-	m := New()
+	m := New[int]()
 	m.Set("a", 1)
 	m.Set("b", 2)
 	j, err := json.Marshal(m)
@@ -444,7 +439,7 @@ func TestJsonMarshal(t *testing.T) {
 }
 
 func TestKeys(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 
 	// Insert 100 elements.
 	for i := 0; i < 100; i++ {
@@ -458,11 +453,11 @@ func TestKeys(t *testing.T) {
 }
 
 func TestMInsert(t *testing.T) {
-	animals := map[string]interface{}{
+	animals := map[string]Animal{
 		"elephant": Animal{"elephant"},
 		"monkey":   Animal{"monkey"},
 	}
-	m := New()
+	m := New[Animal]()
 	m.MSet(animals)
 
 	if m.Count() != 2 {
@@ -490,17 +485,16 @@ func TestUpsert(t *testing.T) {
 	tiger := Animal{"tiger"}
 	lion := Animal{"lion"}
 
-	cb := func(exists bool, valueInMap interface{}, newValue interface{}) interface{} {
-		nv := newValue.(Animal)
+	cb := func(exists bool, valueInMap Animal, newValue Animal) Animal {
 		if !exists {
-			return []Animal{nv}
+			return newValue
 		}
-		res := valueInMap.([]Animal)
-		return append(res, nv)
+		valueInMap.name += newValue.name
+		return valueInMap
 	}
 
-	m := New()
-	m.Set("marine", []Animal{dolphin})
+	m := New[Animal]()
+	m.Set("marine", dolphin)
 	m.Upsert("marine", whale, cb)
 	m.Upsert("predator", tiger, cb)
 	m.Upsert("predator", lion, cb)
@@ -509,36 +503,19 @@ func TestUpsert(t *testing.T) {
 		t.Error("map should contain exactly two elements.")
 	}
 
-	compare := func(a, b []Animal) bool {
-		if a == nil || b == nil {
-			return false
-		}
-
-		if len(a) != len(b) {
-			return false
-		}
-
-		for i, v := range a {
-			if v != b[i] {
-				return false
-			}
-		}
-		return true
-	}
-
 	marineAnimals, ok := m.Get("marine")
-	if !ok || !compare(marineAnimals.([]Animal), []Animal{dolphin, whale}) {
+	if marineAnimals.name != "dolphinwhale" || !ok {
 		t.Error("Set, then Upsert failed")
 	}
 
 	predators, ok := m.Get("predator")
-	if !ok || !compare(predators.([]Animal), []Animal{tiger, lion}) {
+	if !ok || predators.name != "tigerlion" {
 		t.Error("Upsert, then Upsert failed")
 	}
 }
 
 func TestKeysWhenRemoving(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 
 	// Insert 100 elements.
 	Total := 100
@@ -549,7 +526,7 @@ func TestKeysWhenRemoving(t *testing.T) {
 	// Remove 10 elements concurrently.
 	Num := 10
 	for i := 0; i < Num; i++ {
-		go func(c *ConcurrentMap, n int) {
+		go func(c *ConcurrentMap[Animal], n int) {
 			c.Remove(strconv.Itoa(n))
 		}(&m, i)
 	}
@@ -563,7 +540,7 @@ func TestKeysWhenRemoving(t *testing.T) {
 
 //
 func TestUnDrainedIter(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 	// Insert 100 elements.
 	Total := 100
 	for i := 0; i < Total; i++ {
@@ -575,7 +552,7 @@ func TestUnDrainedIter(t *testing.T) {
 	for item := range ch {
 		val := item.Val
 
-		if val == nil {
+		if (val == Animal{}) {
 			t.Error("Expecting an object.")
 		}
 		counter++
@@ -589,7 +566,7 @@ func TestUnDrainedIter(t *testing.T) {
 	for item := range ch {
 		val := item.Val
 
-		if val == nil {
+		if (val == Animal{}) {
 			t.Error("Expecting an object.")
 		}
 		counter++
@@ -603,7 +580,7 @@ func TestUnDrainedIter(t *testing.T) {
 	for item := range m.IterBuffered() {
 		val := item.Val
 
-		if val == nil {
+		if (val == Animal{}) {
 			t.Error("Expecting an object.")
 		}
 		counter++
@@ -615,7 +592,7 @@ func TestUnDrainedIter(t *testing.T) {
 }
 
 func TestUnDrainedIterBuffered(t *testing.T) {
-	m := New()
+	m := New[Animal]()
 	// Insert 100 elements.
 	Total := 100
 	for i := 0; i < Total; i++ {
@@ -627,7 +604,7 @@ func TestUnDrainedIterBuffered(t *testing.T) {
 	for item := range ch {
 		val := item.Val
 
-		if val == nil {
+		if (val == Animal{}) {
 			t.Error("Expecting an object.")
 		}
 		counter++
@@ -641,7 +618,7 @@ func TestUnDrainedIterBuffered(t *testing.T) {
 	for item := range ch {
 		val := item.Val
 
-		if val == nil {
+		if (val == Animal{}) {
 			t.Error("Expecting an object.")
 		}
 		counter++
@@ -655,7 +632,7 @@ func TestUnDrainedIterBuffered(t *testing.T) {
 	for item := range m.IterBuffered() {
 		val := item.Val
 
-		if val == nil {
+		if (val == Animal{}) {
 			t.Error("Expecting an object.")
 		}
 		counter++
